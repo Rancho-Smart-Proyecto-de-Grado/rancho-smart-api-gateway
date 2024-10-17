@@ -1,0 +1,25 @@
+# Ignorar el directorio de compilación
+target/
+
+# Ignorar archivos y carpetas de configuración de Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Ignorar archivos de log
+*.log
+
+# Ignorar archivos de configuración de IDEs
+.idea/
+*.iml
+
+# Ignorar archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Ignorar archivos de Maven
+*.jar
+*.war
+
+# Ignorar archivos temporales
+*.tmp
+*.bak
