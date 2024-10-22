@@ -1,6 +1,76 @@
 spring:
   application:
     name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: apareamiento-composer
+          uri: lb://apareamiento-composer
+          predicates:
+            - Path=/apareamiento/**
+          filters:
+            - StripPrefix=1
+
+        - id: finanzas-composer
+          uri: lb://finanzas-composer
+          predicates:
+            - Path=/finanzas/**
+          filters:
+            - StripPrefix=1
+
+        - id: infraestructura-composer
+          uri: lb://infraestructura-composer
+          predicates:
+            - Path=/infraestructura/**
+          filters:
+            - StripPrefix=1
+
+        - id: integracion-composer
+          uri: lb://integracion-composer
+          predicates:
+            - Path=/integracion/**
+          filters:
+            - StripPrefix=1
+
+        - id: inventario-composer
+          uri: lb://inventario-composer
+          predicates:
+            - Path=/inventario/**
+          filters:
+            - StripPrefix=1
+
+        - id: personal-composer
+          uri: lb://personal-composer
+          predicates:
+            - Path=/personal/**
+          filters:
+            - StripPrefix=1
+
+        - id: produccion-composer
+          uri: lb://produccion-composer
+          predicates:
+            - Path=/produccion/**
+          filters:
+            - StripPrefix=1
+            
+        - id: salud-composer
+          uri: lb://salud-composer
+          predicates:
+            - Path=/salud/**
+          filters:
+            - StripPrefix=1
+
+        - id: ventas-composer
+          uri: lb://ventas-composer
+          predicates:
+            - Path=/ventas/**
+          filters:
+            - StripPrefix=1
+
+      discovery:
+        locator:
+          enabled: true
+          lowerCaseServiceId: true
 
 server:
     port: ${SERVER_PORT_API_GATEWAY}
@@ -11,10 +81,30 @@ eureka:
     service-url:
       defaultZone: ${EUREKA_SERVER_URL}
   instance:
-    prefer-ip-address: true
+    preferIpAddress: false
+    hostname: api-gateway
+    instance-id: api-gateway
 
 management:
   endpoints:
     web:
       exposure:
         include: health
+
+info:
+  app:
+    name: Rancho Smart API Gateway
+    description: Gateway server
+    version: 1.0.0
+  company:
+    name: Rancho Smart
+  build:
+    time: ${BUILD_TIME:2024-08-21T12:30:00Z}
+
+logging:
+  level:
+    org:
+      springframework:
+        cloud: 
+          gateway: DEBUG
+        web: DEBUG 
