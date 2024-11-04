@@ -5,8 +5,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
-import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 
@@ -30,10 +28,10 @@ public class SecurityConfig {
                 .permitAll()
                 
                 .pathMatchers("/personal/usuarios/**", "/personal/credenciales/**")
-                .hasAnyRole("GANADERO_ADMINISTRADOR", "GANADERO_EMPLEADO", "USUARIO")
+                .hasAnyRole("GANADERO_ADMINISTRADOR", "GANADERO_EMPLEADO", "USUARIO_COMPRADOR")
 
                 .pathMatchers(HttpMethod.GET, "/fincas/**")
-                .hasAnyRole("USUARIO", "GANADERO_ADMINISTRADOR", "GANADERO_EMPLEADO")
+                .hasAnyRole("USUARIO_COMPRADOR", "GANADERO_ADMINISTRADOR", "GANADERO_EMPLEADO")
 
                 .pathMatchers("/fincas/**")
                 .hasAnyRole("GANADERO_ADMINISTRADOR", "GANADERO_EMPLEADO")

@@ -2,6 +2,8 @@ FROM maven:3.8.5-openjdk-17 AS build
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
+COPY settings.xml /root/.m2/settings.xml
+
 RUN mvn clean package -DskipTests
 
 FROM openjdk:17-oracle

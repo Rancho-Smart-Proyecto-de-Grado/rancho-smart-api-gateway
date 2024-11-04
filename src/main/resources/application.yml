@@ -124,3 +124,6 @@ logging:
           gateway: DEBUG
         web: DEBUG 
         security: DEBUG
+
+keycloak:
+  client-id: rancho-smart-api-gateway

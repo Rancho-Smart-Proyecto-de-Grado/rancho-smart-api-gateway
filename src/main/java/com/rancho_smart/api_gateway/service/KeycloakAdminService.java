@@ -17,6 +17,10 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import reactor.core.publisher.Mono;
+
 import org.springframework.core.ParameterizedTypeReference;
 
 @Service
@@ -45,6 +49,11 @@ public class KeycloakAdminService {
 
     @Value("${KEYCLOAK_HTTP_PORT}")
     private String keycloakPort;
+
+    private final WebClient webClient;
+    public KeycloakAdminService(WebClient.Builder webClientBuilder) {
+        this.webClient = webClientBuilder.build();
+    }
 
     public String getAdminToken() {
         String keycloakUrl = "http://" + keycloakHost + "/realms/" + realmName + "/protocol/openid-connect/token";
@@ -76,42 +85,50 @@ public class KeycloakAdminService {
         throw new IllegalStateException("Access token not found in the response.");
     }
 
-    public void createUserInKeycloak(String accessToken, String username, String email, String firstName,
-            String lastName, String password, String role) {
-        if (!roleExists(accessToken, role)) {
-            throw new IllegalArgumentException("El rol especificado no existe en Keycloak: " + role);
-        }
+    public Mono<String> createUserInKeycloak(String accessToken, String username, String password, String role) {
+    if (!roleExists(accessToken, role)) {
+        return Mono.error(new IllegalArgumentException("El rol especificado no existe en Keycloak: " + role));
+    }
 
-        String keycloakUrl = "http://" + keycloakHost + "/admin/realms/" + realmName + "/users";
+    String keycloakUrl = "http://" + keycloakHost + "/admin/realms/" + realmName + "/users";
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer " + accessToken);
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    headers.set("Authorization", "Bearer " + accessToken);
 
-        Map<String, Object> user = new HashMap<>();
-        user.put("username", username);
-        user.put("email", email);
-        user.put("enabled", true);
-        user.put("firstName", firstName);
-        user.put("lastName", lastName);
+    Map<String, Object> user = new HashMap<>();
+    user.put("username", username);
+    user.put("enabled", true);
 
-        Map<String, String> credentials = new HashMap<>();
-        credentials.put("type", "password");
-        credentials.put("value", password);
-        credentials.put("temporary", "false");
+    Map<String, String> credentials = new HashMap<>();
+    credentials.put("type", "password");
+    credentials.put("value", password);
+    credentials.put("temporary", "false");
 
-        user.put("credentials", Collections.singletonList(credentials));
+    user.put("credentials", Collections.singletonList(credentials));
 
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(user, headers);
-        ResponseEntity<String> response = restTemplate.postForEntity(keycloakUrl, request, String.class);
-
-        String locationHeader = Optional.ofNullable(response.getHeaders().getLocation())
+    // Usando WebClient en lugar de RestTemplate para encadenar mejor
+    return webClient.post()
+        .uri(keycloakUrl)
+        .headers(httpHeaders -> httpHeaders.addAll(headers))
+        .bodyValue(user)
+        .retrieve()
+        .toBodilessEntity()
+        .map(response -> {
+            String locationHeader = Optional.ofNullable(response.getHeaders().getLocation())
                 .map(Object::toString)
                 .orElseThrow(() -> new IllegalStateException("User creation failed: Location header is missing."));
+            return extractUserIdFromLocation(locationHeader);
+        })
+        .flatMap(userId -> {
+            assignRoleToUser(accessToken, userId, role);
+            return Mono.just(userId);
+        })
+        .onErrorResume(e -> {
+            return Mono.error(new RuntimeException("Error al crear el usuario en Keycloak: " + e.getMessage()));
+        });
+}
 
-        String userId = extractUserIdFromLocation(locationHeader);
-        assignRoleToUser(accessToken, userId, role);
-    }
 
     private void assignRoleToUser(String accessToken, String userId, String roleName) {
         // Primero obtenemos el ID del cliente
@@ -174,35 +191,40 @@ public class KeycloakAdminService {
         return headers;
     }
 
-    public String loginUser(String username, String password) {
+    public Mono<String> loginUser(String username, String password) {
         String keycloakUrl = "http://" + keycloakHost + "/realms/" + realmName + "/protocol/openid-connect/token";
-
+    
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
+    
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("client_id", clientId);
         body.add("client_secret", clientSecret);
         body.add("grant_type", "password");
         body.add("username", username);
         body.add("password", password);
-
+    
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
-
-        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                keycloakUrl,
-                HttpMethod.POST,
-                request,
-                new ParameterizedTypeReference<Map<String, Object>>() {
-                });
-
-        Map<String, Object> responseBody = response.getBody();
-        if (responseBody != null && responseBody.containsKey("access_token")) {
-            return responseBody.get("access_token").toString();
+    
+        try {
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    keycloakUrl,
+                    HttpMethod.POST,
+                    request,
+                    new ParameterizedTypeReference<Map<String, Object>>() {
+                    });
+    
+            Map<String, Object> responseBody = response.getBody();
+            if (responseBody != null && responseBody.containsKey("access_token")) {
+                return Mono.just(responseBody.get("access_token").toString());
+            } else {
+                return Mono.error(new IllegalStateException("Access token not found in the response."));
+            }
+        } catch (Exception e) {
+            return Mono.error(e);
         }
-
-        throw new IllegalStateException("Access token not found in the response.");
     }
+    
 
     private String extractUserIdFromLocation(String locationHeader) {
         return locationHeader.substring(locationHeader.lastIndexOf("/") + 1);
