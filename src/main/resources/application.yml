@@ -1,6 +1,21 @@
 spring:
   application:
     name: api-gateway
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: ${KEYCLOAK_CLIENT_ID}
+            client-secret: ${KEYCLOAK_CLIENT_SECRET} # Secreto del cliente configurado en Keycloak
+            scope: openid, profile, email
+            authorization-grant-type: authorization_code
+            redirect-uri: "${API_GATEWAY_URL}/login/oauth2/code/rancho-smart-api-gateway" # URL de redirección al API Gateway
+            client-authentication-method: basic
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM} # Cambia <KEYCLOAK_HOST> y <REALM_NAME>
+            user-name-attribute: preferred_username
   cloud:
     gateway:
       routes:
@@ -108,3 +123,4 @@ logging:
         cloud: 
           gateway: DEBUG
         web: DEBUG 
+        security: DEBUG
