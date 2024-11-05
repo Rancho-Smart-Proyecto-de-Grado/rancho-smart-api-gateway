@@ -17,27 +17,27 @@ public class UsuarioService {
     @Value("${USUARIOS_URL}")
     private String usuariosUrl;
 
-    
     public UsuarioService(WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder.build();
     }
 
-    public Mono<UsuarioDTO> getUsuarioById(Long usuarioId) {
+    public Mono<UsuarioDTO> getUsuarioById(Long usuarioId, String token) {
         return webClient.get()
-            .uri("/usuarios/{id}", usuarioId)
-            .retrieve()
-            .bodyToMono(UsuarioDTO.class);
+                .uri(usuariosUrl + "/usuarios/{id}", usuarioId)
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .bodyToMono(UsuarioDTO.class);
     }
 
     public Mono<UsuarioDTO> crearUsuario(UsuarioDTO usuarioRequest, String bearerToken) {
         return webClient.post()
-            .uri(usuariosUrl + "/usuarios")
-            .header("Authorization", "Bearer " + bearerToken)
-            .body(Mono.just(usuarioRequest), Object.class)
-            .retrieve()
-            .bodyToMono(UsuarioDTO.class)
-            .onErrorResume(WebClientResponseException.class, e -> {
-                return Mono.error(new RuntimeException("Error al crear Usuario: " + e.getMessage()));
-            });
+                .uri(usuariosUrl + "/usuarios")
+                .header("Authorization", "Bearer " + bearerToken)
+                .body(Mono.just(usuarioRequest), Object.class)
+                .retrieve()
+                .bodyToMono(UsuarioDTO.class)
+                .onErrorResume(WebClientResponseException.class, e -> {
+                    return Mono.error(new RuntimeException("Error al crear Usuario: " + e.getMessage()));
+                });
     }
 }

@@ -21,12 +21,14 @@ public class CredencialService {
         this.webClient = webClientBuilder.baseUrl(credencialesUrl).build();
     }
 
-    public Mono<CredencialDTO> getCredencialesById(Long credencialesId) {
+    public Mono<CredencialDTO> getCredencialByUsername(String username, String token) {
         return webClient.get()
-            .uri("/credenciales/{id}", credencialesId)
-            .retrieve()
-            .bodyToMono(CredencialDTO.class);
+                .uri(credencialesUrl + "/credenciales/usuarios/username/{username}", username)
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .bodyToMono(CredencialDTO.class);
     }
+    
 
     public Mono<CredencialDTO> crearCredenciales(CredencialDTO credencialesRequest, String bearerToken) {
         return webClient.post()
