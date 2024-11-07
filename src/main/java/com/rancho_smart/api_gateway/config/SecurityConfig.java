@@ -62,9 +62,13 @@ public class SecurityConfig {
         configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true);
-
+        
+        // Exponer el encabezado Authorization para que sea accesible en el cliente
+        configuration.addExposedHeader("Authorization");
+    
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Apply CORS settings to all routes
+        source.registerCorsConfiguration("/**", configuration); // Aplicar configuración de CORS a todas las rutas
         return new CorsWebFilter(source);
     }
+    
 }
