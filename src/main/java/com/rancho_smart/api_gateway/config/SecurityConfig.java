@@ -17,10 +17,10 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http
-                .cors() // Enable CORS without disable() to let the CorsWebFilter handle it
-                .and()
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .cors().and() // Habilitar CORS
+                .csrf().disable() // Deshabilitar CSRF si no es necesario
                 .authorizeExchange(authorize -> authorize
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Permitir solicitudes OPTIONS
                         .pathMatchers(HttpMethod.POST, "/keycloak-server/realms/myrealm/protocol/openid-connect/token")
                         .permitAll()
                         .pathMatchers("/personal/usuarios/", "/personal/credenciales/")
@@ -58,17 +58,14 @@ public class SecurityConfig {
     @Bean
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://localhost:4200");
-        configuration.addAllowedMethod("*");
-        configuration.addAllowedHeader("*");
-        configuration.setAllowCredentials(true);
-        
-        // Exponer el encabezado Authorization para que sea accesible en el cliente
-        configuration.addExposedHeader("Authorization");
-    
+        configuration.addAllowedOrigin("http://localhost:4200"); // Permitir el origen de Angular
+        configuration.addAllowedMethod("*"); // Permitir todos los métodos (GET, POST, etc.)
+        configuration.addAllowedHeader("*"); // Permitir todos los encabezados
+        configuration.addExposedHeader("Authorization"); // Exponer el encabezado Authorization
+        configuration.setAllowCredentials(true); // Permitir cookies y credenciales
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration); // Aplicar configuración de CORS a todas las rutas
         return new CorsWebFilter(source);
     }
-    
 }
