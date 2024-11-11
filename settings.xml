@@ -5,7 +5,7 @@
         <server>
             <id>github</id> <!-- Este ID debe coincidir con el ID en el pom.xml -->
             <username>el-sebas-galeano</username>
-            <password>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</password>
+            <password>{{GITHUB_TOKEN}}</password>
         </server>
     </servers>
 </settings>
